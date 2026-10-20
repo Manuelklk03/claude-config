@@ -16,6 +16,19 @@ Son entornos relacionados, pero no idénticos.
 3. Importa o instala solo los que Claude Web permita (por ejemplo, skills compatibles como Task Observer, si el producto permite importarlas).
 4. Ciertos plugins de claude.ai pueden sincronizarse **de la cuenta hacia Claude Code**, cuando la versión y la autenticación lo admiten. Los plugins locales instalados con la CLI **no se suben** a Claude Web automáticamente.
 
+### Cómo se ve la sincronización en tu PC
+
+`claude plugin list` muestra una sección **"Synced from claude.ai"** con los plugins de tu cuenta (se guardan en `~/.claude/plugins/synced/`). Si uno se llama igual que un plugin local (por ejemplo `claude-code-setup`), **gana el local** y el sincronizado aparece como *not loaded*: es normal y no hay que hacer nada.
+
+Limitaciones: los hooks locales (Claude-Mem, PonyTail), las CLIs (Playwright, Agent Browser, OmniRoute), las skills de `~/.claude/skills` y la memoria local **no existen** en Claude Web.
+
+## VS Code
+
+1. Instala la extensión oficial **Claude Code** (`anthropic.claude-code`; el instalador lo hace si `code` está en el PATH).
+2. La extensión usa la misma carpeta `~/.claude` que la terminal: mismos plugins, skills y reglas en cualquier carpeta que abras.
+3. Tras instalar o actualizar algo que toque el PATH (Claude-Mem, Bun, CLIs de npm), **cierra todas las ventanas de VS Code** y vuelve a abrirlo. Abrir una ventana nueva no basta.
+4. Las reglas de cada proyecto (`CLAUDE.md`, `.claude/settings.json` del repo) se suman a las globales.
+
 Nunca copies desde GitHub tokens, cookies de sesión, credenciales de OmniRoute ni la base de memoria local.
 
 Documentación: https://code.claude.com/docs/en/discover-plugins

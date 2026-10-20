@@ -21,7 +21,7 @@ Un repositorio de gran tamaño superó el límite de 120 segundos. El instalador
 1. Cierra VS Code y todas las terminales que estén clonando repositorios.
 2. Comprueba que no hay descargas de Git en marcha.
 3. Ejecuta `REPARAR.cmd`: limpia **solo** las carpetas temporales incompletas conocidas y reintenta.
-4. Si el servicio de Claude-Mem no se activa, utiliza `npx claude-mem doctor` y, si lo indica, `npx claude-mem install`.
+4. Si el servicio de Claude-Mem no se activa, sigue [Claude-Mem](CLAUDE-MEM.md#diagnóstico).
 
 El instalador **no borra** la carpeta de datos de memoria `~/.claude-mem`.
 
@@ -40,19 +40,33 @@ Si siguen sin aparecer, revisa `claude plugin marketplace list` y tu versión de
 
 ### PonyTail: cuatro opciones por configurar
 
-La configuración segura prevista es:
-- `ledger`: `true`
-- `webhookUrl`: cadena vacía
-- `sendNames`: `false`
-- `webhookToken`: dejar vacío (no guardarlo en Git)
+El instalador aplica `ledger=true`, `webhookUrl` vacío y `sendNames=false` con `claude plugin configure --values-stdin`, **solo si** nunca se configuraron. `webhookToken` se deja sin definir. Para comprobarlo:
 
-Para revisar las opciones abre Claude Code y ejecuta:
-
-```text
-/plugin configure ponytail@ponytail
+```powershell
+claude plugin configure ponytail@ponytail
 ```
 
-El instalador **intenta** pasar esos valores con `--config`. Si tu versión de Claude CLI no admite esa opción, instala el plugin y marca la revisión en el log. Nunca inventa un token ni habilita un webhook.
+`webhookUrl` y `webhookToken` aparecen como *not set*: es lo correcto (vacío = nada sale del PC).
+
+### Claude-Mem: los hooks no hacen nada / `Executable not found in $PATH: "claude-mem"`
+
+VS Code (y por tanto Claude Code) se abrió antes de que el instalador añadiera el lanzador al PATH de usuario. **Cierra todas las ventanas de VS Code** y vuelve a abrirlo. `check.ps1` lo detecta con el aviso *"VS Code se abrio antes de instalar el lanzador"*.
+
+### Claude-Mem: `npx claude-mem doctor` → "Hook launcher ✗"
+
+Falso positivo de `npx` en Windows. Explicación y comprobación real en [Claude-Mem](CLAUDE-MEM.md#npx-claude-mem-doctor-dice-hook-launcher-).
+
+### Claude-Mem: el instalador pide iniciar sesión en cmem.ai
+
+No es obligatorio. Cancela y ejecuta `$env:CLAUDE_MEM_ONLINE_OPTIN='false'; npx claude-mem install --provider claude`.
+
+### Claude-Mem: "Codex CLI: integration setup failed"
+
+Codex CLI no está instalado; no afecta a Claude Code ni a Windsurf.
+
+### `claude plugin list` muestra "claude-code-setup@synced … not loaded"
+
+Claude Web sincroniza un plugin con el mismo nombre que el local; gana el local. Es informativo.
 
 ### PowerShell: `NativeCommandError`, `npm notice`, caracteres raros
 

@@ -17,25 +17,26 @@ Si Claude Code detecta los plugins y skills, ya estarán disponibles para cualqu
 ## 2. Revisar Claude-Mem
 
 ```powershell
-npx claude-mem doctor
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
 ```
 
-Si el diagnóstico indica que falta instalar el runtime o conectar un proveedor:
+En la sección **Claude-Mem** todo debe estar en `[OK]`. Si aparece el aviso de VS Code, ciérralo por completo y vuelve a abrirlo. Si falta el lanzador:
 
 ```powershell
-npx claude-mem install
+$env:CLAUDE_MEM_ONLINE_OPTIN = 'false'
+npx claude-mem install --provider claude
 ```
 
-El instalador permite elegir proveedor. Utilizar el plan de Claude consume parte de su uso; los proveedores externos pueden necesitar una cuenta, créditos o claves API. La base local **no se sincroniza automáticamente** entre ordenadores.
+Así no se pide cuenta en cmem.ai: la memoria usa tu plan de Claude (consume parte de su uso). La base local **no se sincroniza** entre ordenadores. Detalles en [Claude-Mem](CLAUDE-MEM.md).
 
 No subas `~/.claude-mem/settings.json`, la base de datos ni ninguna credencial a GitHub.
 
 ## 3. Comprobar PonyTail
 
-Abre una sesión con `claude` y ejecuta:
+El instalador ya aplica estos valores si no estaban configurados. Para comprobarlos:
 
-```text
-/plugin configure ponytail@ponytail
+```powershell
+claude plugin configure ponytail@ponytail
 ```
 
 Valores recomendados para uso individual:
@@ -47,7 +48,7 @@ Valores recomendados para uso individual:
 | `webhookToken` | no configurar si no usas webhook |
 | `sendNames` | `false`: menor exposición de datos |
 
-Si no pide configurar nada, no es necesario cambiarlo.
+`webhookUrl` y `webhookToken` aparecerán como *not set*: es lo esperado.
 
 ## 4. Probar navegador y CLI
 

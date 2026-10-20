@@ -11,7 +11,7 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-Compatible-23A9F2?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-3050A0?style=for-the-badge&logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
 
-**[🚀 Empezar](#-inicio-rápido)** · **[🧩 Herramientas](#-qué-incluye)** · **[✨ Frontend](#-lenis-gsap-y-react-bits)** · **[💻 Otro PC](#-llevarlo-a-otro-pc)** · **[📚 Guías](#-documentación)**
+**[🚀 Empezar](#-inicio-rápido)** · **[🧩 Herramientas](#-qué-incluye)** · **[🧠 Memoria](#-claude-mem-sin-servicios-de-pago)** · **[✨ Frontend](#-lenis-gsap-y-react-bits)** · **[💻 Otro PC](#-llevarlo-a-otro-pc)** · **[📚 Guías](#-documentación)**
 
 </div>
 
@@ -81,12 +81,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ### 3. Verifica la instalación
 
 ```powershell
-claude plugin list
-npx skills ls -g
-npx claude-mem doctor
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
 ```
 
-Reinicia VS Code y Claude Code para cargar plugins o cambios en el `PATH`.
+Comprueba herramientas, skills, Claude-Mem, plugins y PonyTail **sin cambiar nada**. Cierra **todas** las ventanas de VS Code y vuelve a abrirlo para cargar plugins y cambios en el `PATH`.
 
 Si aparecen errores, cierra las sesiones abiertas y ejecuta **`REPARAR.cmd`**. También puedes consultar ` .local/report.json ` y ` .local/install.log `, que se generan localmente y no se publican.
 
@@ -132,15 +130,24 @@ No hace falta configurar manualmente **cada** plugin. Empieza por esto:
 | Paso | Comando / lugar | ¿Obligatorio? |
 |---|---|---|
 | Comprobar plugins y skills | `claude plugin list` · `npx skills ls -g` | Recomendado |
-| Comprobar memoria | `npx claude-mem doctor` | Solo si usarás Claude-Mem |
-| Configurar memoria si falta | `npx claude-mem install` | Según diagnóstico/proveedor |
-| Ver PonyTail | Dentro de Claude: `/plugin configure ponytail@ponytail` | Solo si indica opciones pendientes |
+| Comprobar memoria | Sección Claude-Mem de `check.ps1` | Solo si usarás Claude-Mem |
+| Configurar memoria si falta | `$env:CLAUDE_MEM_ONLINE_OPTIN='false'; npx claude-mem install --provider claude` | Solo si falta el lanzador |
+| Ver PonyTail | `claude plugin configure ponytail@ponytail` | No: el instalador ya lo deja en local |
 | Probar navegador | `playwright-cli --help` · `agent-browser --help` | Opcional |
 | OmniRoute | Proveedores y credenciales propias | **No** hasta que quieras otro proveedor |
 | Headroom | Runtime y hooks | **No** mientras esté desactivado |
 
 > [!TIP]
 > La configuración de PonyTail está pensada para guardar el registro de tareas **localmente** y dejar el webhook vacío. No añadas tokens ni claves a `config/defaults.json`.
+
+## 🧠 Claude-Mem sin servicios de pago
+
+Claude-Mem **no necesita CMEM Pro ni cuenta en cmem.ai**. El kit lo deja con el proveedor `claude`: la memoria se guarda en tu PC y los resúmenes usan tu plan de Claude.
+
+> [!WARNING]
+> En Windows, `npx claude-mem doctor` marca *"Hook launcher ✗"* aunque todo funcione: es un falso positivo de `npx`. Usa `check.ps1`. Si los hooks no responden, cierra VS Code por completo y ábrelo de nuevo.
+
+**[🧠 Guía de Claude-Mem](docs/CLAUDE-MEM.md)**
 
 ## ✨ Lenis, GSAP y React Bits
 
@@ -188,6 +195,8 @@ Cuando quieras incorporar cambios del repositorio o actualizar herramientas:
 > [!WARNING]
 > Git sincroniza **la receta de instalación**, no las sesiones de usuario, bases de memoria ni credenciales de proveedores externos. Cada ordenador necesita sus propias autenticaciones.
 
+Para mantener dos PCs al día, resolver un `push` rechazado o añadir herramientas nuevas al kit: **[🔄 Sincronización y actualizaciones](docs/SINCRONIZACION.md)**.
+
 ### ¿Y Claude Web?
 
 Los plugins compatibles que añadas desde la **cuenta de Claude Web** pueden acompañarte en Claude Code al usar la misma cuenta. Pero las instalaciones locales de Windows, los hooks específicos y la memoria local **no se publican automáticamente en Claude Web**.
@@ -204,18 +213,23 @@ claude-config/
 ├── CLAUDE.md               # Reglas globales base
 ├── config/
 │   ├── manifest.json       # Inventario de herramientas
-│   └── defaults.json       # Predeterminados seguros
+│   ├── defaults.json       # Predeterminados seguros
+│   └── settings.global.template.json  # Referencia (no se copia)
 ├── scripts/
 │   ├── install.ps1
 │   ├── repair.ps1
-│   ├── check.ps1
+│   ├── check.ps1           # Diagnóstico, solo lectura
 │   ├── update.ps1
 │   └── frontend-deps.ps1
 └── docs/
     ├── PRIMEROS-PASOS.md
-    ├── LIBRERIAS-FRONTEND.md
     ├── GUIA-HERRAMIENTAS.md
+    ├── CLAUDE-MEM.md
     ├── CLAUDE-WEB.md
+    ├── SINCRONIZACION.md
+    ├── LIBRERIAS-FRONTEND.md
+    ├── SEGURIDAD.md
+    ├── ARQUITECTURA.md
     └── SOLUCIONAR-PROBLEMAS.md
 ```
 
@@ -252,9 +266,14 @@ No borres la carpeta `~/.claude` ni las bases locales de memoria para intentar r
 |---|---|
 | **[Primeros pasos](docs/PRIMEROS-PASOS.md)** | Qué configurar después de instalar y cómo comprobar que funciona |
 | **[Librerías frontend](docs/LIBRERIAS-FRONTEND.md)** | Lenis, GSAP, React Bits y ejemplos para Next.js |
-| [Guía de herramientas](docs/GUIA-HERRAMIENTAS.md) | Cuándo usar cada plugin o skill |
-| [Claude Web](docs/CLAUDE-WEB.md) | Qué funciona en la web y qué se sincroniza |
+| [Guía de herramientas](docs/GUIA-HERRAMIENTAS.md) | Cuándo usar cada plugin o skill, inventario y estado |
+| [Claude-Mem](docs/CLAUDE-MEM.md) | Memoria local sin pago, hooks y límites |
+| [Claude Web y VS Code](docs/CLAUDE-WEB.md) | Qué funciona en cada entorno y qué se sincroniza |
+| [Sincronización](docs/SINCRONIZACION.md) | Otro PC, GitHub, actualizaciones y añadir herramientas |
+| [Seguridad](docs/SEGURIDAD.md) | Qué nunca se sube y dónde viven las credenciales |
+| [Arquitectura](docs/ARQUITECTURA.md) | Cómo funciona el instalador |
 | [Solucionar problemas](docs/SOLUCIONAR-PROBLEMAS.md) | Diagnóstico y reparación |
+| [Changelog](CHANGELOG.md) | Cambios por versión |
 
 ---
 
