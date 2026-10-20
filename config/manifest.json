@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Fuentes comprobadas 2026-10-20. Instalar plugins de terceros permite ejecutar hooks/codigo local: revisalos.",
+  "note": "Fuentes comprobadas 2026-10-20 (v2.2). Instalar plugins de terceros permite ejecutar hooks/codigo local: revisalos.",
   "marketplaces": [
     {
       "id": "claude-plugins-official",
@@ -154,7 +154,12 @@
     {
       "source": "safishamsi/graphify",
       "skill": "graphify",
-      "purpose": "Skill Graphify (la CLI tiene instalacion aparte)"
+      "purpose": "Skill Graphify; la propia skill instala su CLI (uv tool install graphifyy) al usarla"
+    },
+    {
+      "source": "vercel-labs/skills",
+      "skill": "find-skills",
+      "purpose": "Buscar e instalar skills nuevas"
     }
   ],
   "npmGlobal": [
@@ -192,6 +197,8 @@
     "React Bits: copiar componentes elegidos desde reactbits.dev en cada proyecto",
     "Claude Web: plugins compatibles se instalan en Customize > Plugins y habilidades; pueden sincronizarse con Claude Code si el CLI es reciente",
     "OmniRoute: nunca sincronizar claves, cookies, tokens ni rutas locales en Git",
-    "Headroom: el plugin no implica que el runtime del proxy quede configurado"
+    "Headroom: el plugin no implica que el runtime del proxy quede configurado",
+    "Claude-Mem: el instalador usa CLAUDE_MEM_ONLINE_OPTIN=false; nunca inicia sesion en cmem.ai",
+    "Codex CLI: no forma parte del kit; el aviso de Claude-Mem sobre Codex es normal si no esta instalado"
   ]
 }

@@ -7,9 +7,9 @@ if(Test-Path -LiteralPath (Join-Path $root '.git')) {
     & git.exe -C $root pull --ff-only
     if($LASTEXITCODE -ne 0) {throw 'No se ha podido hacer git pull. Revisa tus cambios locales.'}
 } else {Write-Warning 'Esta carpeta procede de un ZIP. Para actualizar los archivos descarga el ZIP nuevo o clona claude-config.'}
-$profile='Complete'
-if($Core){$profile='Core'}
-& (Join-Path $PSScriptRoot 'install.ps1') -Profile $profile
+$installProfile='Complete'
+if($Core){$installProfile='Core'}
+& (Join-Path $PSScriptRoot 'install.ps1') -Profile $installProfile
 
 # Actualizar copias de plugins instalados, no solo el listado de marketplaces.
 $manifest=Get-Content -LiteralPath (Join-Path $root 'config\manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json

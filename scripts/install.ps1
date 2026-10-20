@@ -11,6 +11,8 @@ param(
     [switch]$SkipReferences
 )
 $ErrorActionPreference = 'Stop'
+# Una terminal abierta antes de instalar algo no ve el PATH nuevo: releerlo del registro.
+$env:PATH = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
 $env:CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS = '900000'
 $env:CLAUDE_CODE_PLUGIN_PREFER_HTTPS = '1'
 $root = Split-Path -Parent $PSScriptRoot
@@ -63,7 +65,6 @@ function InstalledSkill([string]$name) {
     return (Test-Path -LiteralPath (Join-Path $claudeHome "skills\$name\SKILL.md"))
 }
 function TryMarketplace([object]$item) {
-    $path=Join-Path $claudeHome 'plugins\known_marketplaces.json'
     # Dejar que Claude valide el catalogo; 'already on disk' finaliza con exito.
     return (Exec "Marketplace $($item.id)" 'claude' @('plugin','marketplace','add', $item.source))
 }
@@ -84,7 +85,7 @@ function Clean-TemporaryClone {
     }
 }
 try {
-    Say '=== CLAUDE CONFIG PORTABLE v2 - WINDOWS ==='
+    Say "=== CLAUDE CONFIG PORTABLE v2.2 - WINDOWS - $(Get-Date -Format 'yyyy-MM-dd HH:mm') - perfil $Profile ==="
     if (-not (Have 'git.exe')) {throw 'Necesitas Git. Usa winget install --id Git.Git -e'}
     if (-not (Have 'node.exe')) {throw 'Necesitas Node.js 22.20+. Usa winget install --id OpenJS.NodeJS.LTS -e'}
     if (-not (Have 'claude.exe')) {
@@ -125,24 +126,51 @@ try {
         if($SkipClaudeMem -and $m.id -eq 'thedotmack') {continue}
         [void](TryMarketplace $m)
     }
+    $newPlugins=@()
     foreach($p in $manifest.plugins) {
         if($Profile -eq 'Core' -and $p.stage -eq 'opcional') {continue}
         if($SkipClaudeMem -and $p.id -eq 'claude-mem@thedotmack') {continue}
         if(InstalledPlugin $p.id) {Record "Plugin $($p.id)" 'SKIP' 'Instalado en este equipo'; continue}
-        $args=@('plugin','install',$p.id,'--scope','user')
-        if ($p.id -eq 'ponytail@ponytail') {
-            $args+=@('--config','ledger=true','--config','webhookUrl=','--config','sendNames=false')
-            if (-not (Exec "Plugin $($p.id) con defaults" 'claude' $args)) {
-                [void](Exec "Plugin $($p.id) sin defaults" 'claude' @('plugin','install',$p.id,'--scope','user'))
-                Record 'Configurar PonyTail' 'PENDING' 'En Claude: /plugin configure ponytail@ponytail (sin webhook)'
-            }
-        } else { [void](Exec "Plugin $($p.id)" 'claude' $args) }
+        [void](Exec "Plugin $($p.id)" 'claude' @('plugin','install',$p.id,'--scope','user'))
+        # Codigo 0 no basta: comprobar que Claude lo registra de verdad.
+        if(InstalledPlugin $p.id) {$newPlugins+=$p.id}
+        else {Record "Verificar $($p.id)" 'FAILED' 'No aparece en installed_plugins.json'}
     }
-    # Las utilidades que fuerzan comportamiento o usan un proxy se instalan pero se dejan deshabilitadas.
-    if ($Profile -eq 'Complete') {
-        foreach($p in $defaults.optionalPluginsInstalledButDisabled) {
-            [void](Exec "Deshabilitar $p por defecto" 'claude' @('plugin','disable',$p))
+    # Opcionales: deshabilitar solo al instalarlos ahora; si luego los activas tu, se respeta.
+    foreach($p in $defaults.optionalPluginsInstalledButDisabled) {
+        if($newPlugins -contains $p) {[void](Exec "Deshabilitar $p por defecto" 'claude' @('plugin','disable',$p))}
+    }
+    # PonyTail: aplicar defaults locales solo si nadie ha configurado aun esas opciones.
+    if(InstalledPlugin 'ponytail@ponytail') {
+        try {$cfg=(& claude plugin configure ponytail@ponytail --json 2>$null | Out-String) | ConvertFrom-Json} catch {$cfg=$null}
+        if($cfg -and @($cfg.configured).Count -eq 0) {
+            $tmp=Join-Path $logs 'ponytail-config.json'
+            # webhookToken nunca se guarda aqui: va al llavero del sistema y solo si tu lo configuras.
+            [ordered]@{ledger="$($defaults.ponytail.ledger)".ToLower(); webhookUrl=[string]$defaults.ponytail.webhookUrl; sendNames="$($defaults.ponytail.sendNames)".ToLower()} |
+                ConvertTo-Json -Compress | ForEach-Object {[IO.File]::WriteAllText($tmp,$_)}
+            # PowerShell 5.1 altera el stdin de procesos nativos; redirigir desde archivo con Start-Process.
+            $proc=Start-Process -FilePath (Get-Command claude).Source -ArgumentList 'plugin','configure','ponytail@ponytail','--values-stdin' -RedirectStandardInput $tmp -NoNewWindow -Wait -PassThru
+            Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
+            if($proc.ExitCode -eq 0) {Record 'Configurar PonyTail' 'OK' 'Registro local, sin webhook, sin enviar nombres'}
+            else {Record 'Configurar PonyTail' 'PENDING' 'En Claude: /plugin configure ponytail@ponytail (sin webhook)'}
+        } else {Record 'Configurar PonyTail' 'SKIP' 'Opciones ya configuradas: se respetan'}
+    }
+    if(-not $SkipClaudeMem -and (InstalledPlugin 'claude-mem@thedotmack')) {
+        $launcher=Join-Path $env:LOCALAPPDATA 'claude-mem\bin\claude-mem.exe'
+        if(-not (Test-Path -LiteralPath $launcher)) {
+            # Sin cuenta cmem.ai: CLAUDE_MEM_ONLINE_OPTIN=false y proveedor explicito (documentado por claude-mem).
+            # Si ya habia proveedor en ~/.claude-mem/settings.json, no se pasa --provider y se conserva.
+            $env:CLAUDE_MEM_ONLINE_OPTIN='false'
+            $cmArgs=@('-y','claude-mem@latest','install')
+            if(-not (Test-Path -LiteralPath (Join-Path $HOME '.claude-mem\settings.json'))) {$cmArgs+=@('--provider',$defaults.memoryProvider)}
+            [void](Exec 'Claude-Mem runtime y lanzador' 'npx.cmd' $cmArgs)
         }
+        if(Test-Path -LiteralPath $launcher) {
+            $out=(& $launcher --version 2>$null | Out-String).Trim()
+            if($out -match '^\d+$') {Record 'Lanzador Claude-Mem' 'OK' "Protocolo $out"} else {Record 'Lanzador Claude-Mem' 'FAILED' "Respuesta inesperada: $out"}
+            $userPath=[Environment]::GetEnvironmentVariable('Path','User') -split ';'
+            if($userPath -notcontains (Split-Path -Parent $launcher)) {Record 'PATH Claude-Mem' 'PENDING' 'Ejecuta: npx claude-mem install --provider claude'}
+        } else {Record 'Lanzador Claude-Mem' 'PENDING' 'Ver docs/CLAUDE-MEM.md'}
     }
     if(-not $SkipSkills) {
         if(-not (Have 'npx.cmd')) {Record 'Skills' 'FAILED' 'Falta npx.cmd'}
@@ -150,6 +178,7 @@ try {
             foreach($s in $manifest.skills) {
                 if(InstalledSkill $s.skill) {Record "Skill $($s.skill)" 'SKIP' 'Ya existe'; continue}
                 [void](Exec "Skill $($s.skill)" 'npx.cmd' @('-y','skills@latest','add',$s.source,'--skill',$s.skill,'-g','-a','claude-code','-y'))
+                if(-not (InstalledSkill $s.skill)) {Record "Verificar skill $($s.skill)" 'FAILED' 'No existe ~/.claude/skills/<skill>/SKILL.md'}
             }
         }
     }
@@ -157,7 +186,10 @@ try {
         if(Have 'npm.cmd') {
             foreach($n in $manifest.npmGlobal) {
                 if(Have ($n.command+'.cmd')) {Record "CLI $($n.command)" 'SKIP' 'Ya esta en PATH'}
-                else {[void](Exec "CLI $($n.command)" 'npm.cmd' @('install','-g',$n.pkg))}
+                else {
+                    [void](Exec "CLI $($n.command)" 'npm.cmd' @('install','-g',$n.pkg))
+                    if(-not (Have ($n.command+'.cmd'))) {Record "Verificar $($n.command)" 'FAILED' 'No aparece en PATH tras npm install -g'}
+                }
             }
             if((Have 'playwright-cli.cmd') -and -not (InstalledSkill 'playwright-cli')) {
                 [void](Exec 'Skill Playwright CLI' 'playwright-cli.cmd' @('install','--skills','-g'))
@@ -202,6 +234,7 @@ try {
     $skip=@($results | Where-Object {$_.status -eq 'SKIP'}).Count
     Say "=== RESULTADO: $ok correctos, $skip ya disponibles, $failed errores, $pending pendientes ==="
     Say "Informe: $report | Log: $log"
-    Say 'Reinicia Claude Code. Para memoria: npx claude-mem doctor (puede necesitar npx claude-mem install).'
+    Say 'Cierra VS Code por completo y vuelve a abrirlo para que Claude Code cargue plugins y el PATH nuevo.'
+    Say 'Diagnostico: scripts\check.ps1 (no uses npx claude-mem doctor para el lanzador: da un falso error en Windows).'
     Say 'La autenticacion de modelos, proxies y Claude Web no se comparte por Git.'
 }

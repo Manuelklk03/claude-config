@@ -1,14 +1,14 @@
 {
-  "version": 2,
+  "version": "2.2",
   "installationProfile": "complete",
   "globalScope": "user",
-  "memoryProvider": "requires-user-choice",
+  "memoryProvider": "claude",
+  "memoryProviderNote": "claude = memoria local procesada con tu plan de Anthropic. Sin cuenta cmem.ai ni CMEM Pro. Solo se aplica en la primera instalacion.",
   "proxyRouting": "not-auto-enabled",
   "ponytail": {
     "ledger": true,
     "webhookUrl": "",
-    "sendNames": false,
-    "webhookToken": "never-save-to-git"
+    "sendNames": false
   },
   "optionalPluginsInstalledButDisabled": [
     "antislop@anti-ai-slop",
