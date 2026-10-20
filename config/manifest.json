@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "note": "Fuentes comprobadas 2026-10-20. Instalar plugins de terceros permite ejecutar hooks/codigo local: revisalos.",
+  "marketplaces": [
+    {
+      "id": "frontend-stack",
+      "source": "JaimeJunr/claude-code-frontend-skills"
+    },
+    {
+      "id": "imagegen-skills",
+      "source": "Leonxlnx/imagegen-skills"
+    },
+    {
+      "id": "thedotmack",
+      "source": "thedotmack/claude-mem"
+    },
+    {
+      "id": "ponytail",
+      "source": "DietrichGebert/ponytail"
+    },
+    {
+      "id": "karpathy-skills",
+      "source": "multica-ai/andrej-karpathy-skills"
+    },
+    {
+      "id": "grill-me",
+      "source": "joshuawheelock/grill-me"
+    },
+    {
+      "id": "anti-ai-slop",
+      "source": "muris11/anti-ai-slop"
+    },
+    {
+      "id": "caveman",
+      "source": "Karnonson/caveman"
+    },
+    {
+      "id": "headroom-marketplace",
+      "source": "headroomlabs-ai/headroom"
+    }
+  ],
+  "plugins": [
+    {
+      "id": "frontend-stack@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "frontend-design@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "impeccable@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "ui-ux-pro-max@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "taste@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "emil-design-eng@frontend-stack",
+      "stage": "principal",
+      "purpose": "Frontend bundle"
+    },
+    {
+      "id": "imagegen-skills@imagegen-skills",
+      "stage": "principal",
+      "purpose": "Image to code del autor actual (no duplicar taste-imagegen)"
+    },
+    {
+      "id": "claude-mem@thedotmack",
+      "stage": "principal",
+      "purpose": "Memoria local entre sesiones"
+    },
+    {
+      "id": "ponytail@ponytail",
+      "stage": "principal",
+      "purpose": "Reglas y modos de programacion"
+    },
+    {
+      "id": "andrej-karpathy-skills@karpathy-skills",
+      "stage": "principal",
+      "purpose": "Principios Karpathy"
+    },
+    {
+      "id": "claude-code-setup@claude-plugins-official",
+      "stage": "principal",
+      "purpose": "Plugin oficial Anthropic de sugerencias; modo lectura"
+    },
+    {
+      "id": "superpowers@claude-plugins-official",
+      "stage": "principal",
+      "purpose": "Planificacion, pruebas y debugging"
+    },
+    {
+      "id": "grill-me@grill-me",
+      "stage": "principal",
+      "purpose": "Cuestionario sobre tu implementacion"
+    },
+    {
+      "id": "antislop@anti-ai-slop",
+      "stage": "opcional",
+      "purpose": "Filtro anti AI slop; puede solaparse con frontend"
+    },
+    {
+      "id": "caveman@caveman",
+      "stage": "opcional",
+      "purpose": "Compresion de respuestas; NO recomendable para aprender con explicaciones"
+    },
+    {
+      "id": "headroom@headroom-marketplace",
+      "stage": "opcional",
+      "purpose": "Hooks de Headroom. El backend puede requerir pasos adicionales"
+    }
+  ],
+  "skills": [
+    {
+      "source": "vercel-labs/agent-skills",
+      "skill": "web-design-guidelines",
+      "purpose": "Revision UX y accesibilidad"
+    },
+    {
+      "source": "coreyhaines31/marketingskills",
+      "skill": "seo-audit",
+      "purpose": "Auditoria SEO"
+    },
+    {
+      "source": "coreyhaines31/marketingskills",
+      "skill": "ai-seo",
+      "purpose": "SEO para buscadores con IA"
+    },
+    {
+      "source": "anthropics/skills",
+      "skill": "canvas-design",
+      "purpose": "Diseno de documentos y graficos"
+    },
+    {
+      "source": "anthropics/skills",
+      "skill": "skill-creator",
+      "purpose": "Crear skills Anthropic"
+    },
+    {
+      "source": "safishamsi/graphify",
+      "skill": "graphify",
+      "purpose": "Skill Graphify (la CLI tiene instalacion aparte)"
+    }
+  ],
+  "npmGlobal": [
+    {
+      "pkg": "@playwright/cli@latest",
+      "command": "playwright-cli",
+      "purpose": "Playwright CLI; genera skill global despues"
+    },
+    {
+      "pkg": "agent-browser",
+      "command": "agent-browser",
+      "purpose": "Navegador agente"
+    }
+  ],
+  "optionalNpmGlobal": [
+    {
+      "pkg": "omniroute",
+      "command": "omniroute",
+      "purpose": "Proxy de proveedores, requiere configurar autenticacion manual"
+    }
+  ],
+  "gitReference": {
+    "repo": "https://github.com/VoltAgent/awesome-design-md.git",
+    "name": "awesome-design-md",
+    "purpose": "Coleccion de ejemplos DESIGN.md; NO se activa globalmente"
+  },
+  "customSkill": {
+    "repo": "https://github.com/SquidyInk/task-observer.git",
+    "skill": "task-observer",
+    "purpose": "SKILL.md y references; necesita revision del usuario"
+  },
+  "noteNotInstalled": [
+    "GSAP: npm install gsap en cada proyecto que lo use",
+    "Lenis: npm install lenis en cada proyecto que lo use",
+    "React Bits: copiar componentes elegidos desde reactbits.dev en cada proyecto",
+    "Claude Web: plugins compatibles se instalan en Customize > Plugins y habilidades; pueden sincronizarse con Claude Code si el CLI es reciente",
+    "OmniRoute: nunca sincronizar claves, cookies, tokens ni rutas locales en Git",
+    "Headroom: el plugin no implica que el runtime del proxy quede configurado"
+  ]
+}

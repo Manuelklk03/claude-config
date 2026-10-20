@@ -1,0 +1,9 @@
+*.log
+.env
+.env.*
+!*.example
+**/credentials*
+**/secrets*
+backups/
+.local/
+node_modules/

@@ -1,0 +1,76 @@
+{
+  "extraKnownMarketplaces": {
+    "frontend-stack": {
+      "source": {
+        "source": "github",
+        "repo": "JaimeJunr/claude-code-frontend-skills"
+      }
+    },
+    "imagegen-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Leonxlnx/imagegen-skills"
+      }
+    },
+    "thedotmack": {
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "karpathy-skills": {
+      "source": {
+        "source": "github",
+        "repo": "multica-ai/andrej-karpathy-skills"
+      }
+    },
+    "grill-me": {
+      "source": {
+        "source": "github",
+        "repo": "joshuawheelock/grill-me"
+      }
+    },
+    "anti-ai-slop": {
+      "source": {
+        "source": "github",
+        "repo": "muris11/anti-ai-slop"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "Karnonson/caveman"
+      }
+    },
+    "headroom-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "headroomlabs-ai/headroom"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "frontend-stack@frontend-stack": true,
+    "frontend-design@frontend-stack": true,
+    "impeccable@frontend-stack": true,
+    "ui-ux-pro-max@frontend-stack": true,
+    "taste@frontend-stack": true,
+    "emil-design-eng@frontend-stack": true,
+    "imagegen-skills@imagegen-skills": true,
+    "claude-mem@thedotmack": true,
+    "ponytail@ponytail": true,
+    "andrej-karpathy-skills@karpathy-skills": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "grill-me@grill-me": true,
+    "antislop@anti-ai-slop": false,
+    "caveman@caveman": false,
+    "headroom@headroom-marketplace": false
+  }
+}
