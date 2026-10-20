@@ -1,139 +1,267 @@
-Claude Config Portable 🚀
-Instalación y mantenimiento de Claude Code, skills, plugins y herramientas de desarrollo en Windows, con una sola configuración reutilizable en cualquier PC.
-Preparado para reutilizarse en distintos ordenadores, en VS Code y en todos tus repositorios, sin tener que instalar los mismos plugins por proyecto.
+<div align="center">
 
-¿Qué problema resuelve?
-Cuando cambias de equipo o reinstalas VS Code, tus repositorios están en GitHub, pero la configuración global de Claude Code no se traslada por Git automáticamente. Este proyecto guarda las instrucciones y recetas de instalación, no los datos privados. Ejecutando el instalador en cada PC recuperas las mismas herramientas compatibles.
+# ⚡ Claude Config Portable
 
-En resumen: una instalación por ordenador, no una instalación por repositorio.
-Componente	Se instala dónde	Disponible en otros repositorios	Se sincroniza por Git
-Plugins Claude Code	~/.claude/plugins/	Sí, con scope user	Configuración/recetas, no los binarios
-Skills globales	~/.claude/skills/	Sí	El inventario y la receta
-Reglas CLAUDE.md	~/.claude/CLAUDE.md	Sí	Sí, mediante esta plantilla, solo si no existían
-Extensión Claude VS Code	Instalación de VS Code	Sí, en esa instalación	Receta
-API keys / sesiones	Perfil local/servicios	Según proveedor	Nunca
-Datos locales de Claude-Mem	~/.claude-mem/	En ese equipo	Nunca
-Claude Web y Claude Code cloud	Cuenta/sesión remota	Depende del tipo de plugin	No de forma universal
+### Un solo kit. Todos tus proyectos. Cualquier PC.
 
+**Plugins, skills, automatización y configuración de Claude Code en Windows y Visual Studio Code.**
 
-✅ Inicio rápido: primer ordenador
-Requisitos: Windows 10/11, Git, Node.js 22.20+ (tu Node 24 es válido), VS Code y Claude Code CLI. GitHub debe permitirte hacer git push al repositorio privado.
-1. Descarga el ZIP y descomprímelo; no ejecutes directamente los .cmd desde dentro del ZIP.
-2. Abre la carpeta claude-config-portable.
-3. Haz doble clic en INSTALAR.cmd (o en PowerShell ejecuta powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1).
-4. Espera al resumen RESULTADO. Puedes repetir el instalador sin que borre tu configuración.
-5. Reinicia VS Code / Claude Code y comprueba claude plugin list y npx skills ls -g.
-6. Si hay errores, cierra todas las sesiones de Claude y VS Code y ejecuta REPARAR.cmd.
-Si claude no se reconoce, instala Claude Code mediante el instalador oficial. En PowerShell, su comando nativo suele ser:
-irm https://claude.ai/install.ps1 | iex
-Cierra y abre la terminal tras instalarlo.
-Modo conservador (menos plugins simultáneos)
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Profile Core
-El modo predeterminado es Complete: instala todas las herramientas identificadas del inventario, pero deja Headroom, Caveman y Anti AI Slop deshabilitados hasta que los necesites; así no añaden hooks o instrucciones contradictorias en cada sesión.
-☁️ Guardar el kit en tu repositorio privado
-1. Crea en GitHub un repositorio llamado claude-config con visibilidad Private. Si ya existe, utiliza ese.
-2. Con Git configurado para tu cuenta, dentro de esta carpeta haz doble clic en PUBLICAR-EN-GITHUB.cmd.
-3. El script clona https://github.com/Manuelklk03/claude-config.git en una carpeta temporal, sustituye solo los archivos propios de este kit, crea un commit y hace git push sin --force.
-4. Los demás archivos personales de tu repositorio remoto se respetan. Si quieres eliminar archivos antiguos ajenos al kit, revísalos manualmente.
-También puedes ejecutarlo a mano (para otro nombre de repositorio):
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\publish.ps1 -RepoUrl 'https://github.com/TU_USUARIO/claude-config.git'
-Importante: no crea la cuenta ni el repositorio de GitHub por ti; el repo debe existir y tu Git debe tener acceso. Si Git requiere credenciales, realiza antes gh auth login (si utilizas GitHub CLI) o autentícate mediante Git Credential Manager.
-💻 Instalarlo en el segundo ordenador
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
+[![Claude Code](https://img.shields.io/badge/Claude-Code-D97757?style=for-the-badge)](https://code.claude.com/docs/en/overview)
+[![VS Code](https://img.shields.io/badge/VS%20Code-Compatible-23A9F2?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-3050A0?style=for-the-badge&logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
+
+**[🚀 Empezar](#-inicio-rápido)** · **[🧩 Herramientas](#-qué-incluye)** · **[✨ Frontend](#-lenis-gsap-y-react-bits)** · **[💻 Otro PC](#-llevarlo-a-otro-pc)** · **[📚 Guías](#-documentación)**
+
+</div>
+
+---
+
+> [!IMPORTANT]
+> Este proyecto **no sustituye a Claude Code**. Es un kit reproducible de instalación y configuración. Lo ejecutas **una vez por ordenador** y los plugins/skills globales quedan disponibles en **todos tus repositorios**. Las credenciales y las memorias locales **no se suben a GitHub**.
+
+## 🎯 ¿Qué soluciona?
+
+Normalmente, clonar tu proyecto desde GitHub **no recupera** los plugins, skills y programas globales instalados en otro ordenador. Este repositorio conserva **el inventario, las reglas y los scripts** para reconstruir el entorno.
+
+```mermaid
+flowchart TD
+    A[(GitHub privado<br/>claude-config)] --> B[Instalar en PC 1]
+    A --> C[Instalar en PC 2]
+    B --> D[Claude Code + VS Code]
+    C --> E[Claude Code + VS Code]
+    D --> F[ValveDex · Digital-Fit · Portfolio · Otros]
+    E --> G[Cualquier repositorio del PC 2]
+```
+
+| 🌍 Global en el PC | 📦 Por proyecto | 🔒 Nunca en Git |
+|---|---|---|
+| Plugins, skills, reglas generales, utilidades de navegador | `package.json`, librerías como Lenis/GSAP, componentes React Bits, reglas específicas del repo | Claves API, cookies, tokens, sesión, base de datos local de Claude-Mem |
+
+## 🚀 Inicio rápido
+
+### 1. Requisitos
+
+- Windows 10/11, **Git**, **Node.js 22.20+**, npm y **Claude Code CLI**.
+- Visual Studio Code (recomendado) con extensión oficial de Claude Code.
+- Acceso a internet para descargar plugins y skills.
+
+Compruébalo desde PowerShell:
+
+```powershell
+git --version
+node --version
+npm --version
+claude --version
+code --version
+```
+
+Si falta Claude Code, sigue su [instalación oficial](https://code.claude.com/docs/en/setup).
+
+### 2. Instala el kit
+
+**Desde el ZIP:** descomprime la carpeta y ejecuta **`INSTALAR.cmd`**. No lo ejecutes dentro del ZIP.
+
+**Desde PowerShell:** en la carpeta del kit:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
+```
+
+- Detecta plugins/skills ya instalados y evita repetir los que reconoce.
+- Crea copia de seguridad de `~/.claude/settings.json` cuando exista.
+- No reemplaza un `CLAUDE.md` global que ya tengas.
+- Instala plugins en ámbito `user` para que estén disponibles en todos tus proyectos.
+- Deja **Headroom, Caveman y Anti AI Slop desactivados** por defecto para reducir solapamientos.
+
+> [!NOTE]
+> Si prefieres un conjunto básico de plugins:
+> `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Profile Core`
+
+### 3. Verifica la instalación
+
+```powershell
+claude plugin list
+npx skills ls -g
+npx claude-mem doctor
+```
+
+Reinicia VS Code y Claude Code para cargar plugins o cambios en el `PATH`.
+
+Si aparecen errores, cierra las sesiones abiertas y ejecuta **`REPARAR.cmd`**. También puedes consultar ` .local/report.json ` y ` .local/install.log `, que se generan localmente y no se publican.
+
+📖 **[Guía detallada después de instalar](docs/PRIMEROS-PASOS.md)**
+
+## 🧩 Qué incluye
+
+### 🎨 Diseño y frontend
+
+La base visual es **[Claude Code Frontend Skills](https://github.com/JaimeJunr/claude-code-frontend-skills)**, que coordina las distintas skills para que no compitan en una misma tarea.
+
+| Skill/plugin | Uso principal |
+|---|---|
+| `frontend-stack` | Selecciona qué skill lidera una tarea de interfaz |
+| `frontend-design` | Dirección visual de Anthropic |
+| `impeccable` | Auditoría, accesibilidad, pulido de UI |
+| `ui-ux-pro-max` | Sistemas de diseño, estilos y tipografía |
+| `taste` | Landings y diseño más específico |
+| `emil-design-eng` | Animaciones e interacciones |
+| `imagegen-skills` | Image to Code y herramientas de imagen |
+| `web-design-guidelines` | Revisión de buenas prácticas de interfaces |
+
+### 🛠️ Desarrollo, memoria y automatización
+
+| Área | Herramientas | Estado previsto |
+|---|---|---|
+| Planificación y calidad | Superpowers, Karpathy Skills, PonyTail, Grill Me | Global |
+| Configuración | Claude Code Setup | Global |
+| Memoria | Claude-Mem, Task Observer | Global; revisar proveedor de memoria |
+| Navegador y pruebas | Playwright CLI, Agent Browser | CLI + skills globales |
+| SEO | SEO Audit, AI SEO | Skills globales |
+| Otras skills | Canvas Design, Skill Creator, Graphify, Find Skills | Disponibles globalmente según inventario |
+| Referencias visuales | Awesome DESIGN.md | Consulta, no ejecución permanente |
+| Opcionales sensibles | Headroom, Caveman, Anti AI Slop | Instalados, **desactivados** por defecto |
+| Enrutador de modelos | OmniRoute | CLI instalada; conexión **no activada** |
+
+El inventario exacto y las fuentes están en [`config/manifest.json`](config/manifest.json). Consulta cuándo utilizar cada componente en **[Guía de herramientas](docs/GUIA-HERRAMIENTAS.md)**.
+
+## ✅ Después de instalar: configuración que sí debes revisar
+
+No hace falta configurar manualmente **cada** plugin. Empieza por esto:
+
+| Paso | Comando / lugar | ¿Obligatorio? |
+|---|---|---|
+| Comprobar plugins y skills | `claude plugin list` · `npx skills ls -g` | Recomendado |
+| Comprobar memoria | `npx claude-mem doctor` | Solo si usarás Claude-Mem |
+| Configurar memoria si falta | `npx claude-mem install` | Según diagnóstico/proveedor |
+| Ver PonyTail | Dentro de Claude: `/plugin configure ponytail@ponytail` | Solo si indica opciones pendientes |
+| Probar navegador | `playwright-cli --help` · `agent-browser --help` | Opcional |
+| OmniRoute | Proveedores y credenciales propias | **No** hasta que quieras otro proveedor |
+| Headroom | Runtime y hooks | **No** mientras esté desactivado |
+
+> [!TIP]
+> La configuración de PonyTail está pensada para guardar el registro de tareas **localmente** y dejar el webhook vacío. No añadas tokens ni claves a `config/defaults.json`.
+
+## ✨ Lenis, GSAP y React Bits
+
+Estas **no son skills de Claude**. Son librerías o componentes que se incorporan **únicamente a los proyectos frontend que las necesiten**.
+
+| Recurso | Sirve para | En un proyecto con `package.json` |
+|---|---|---|
+| [Lenis](https://lenis.darkroom.engineering/) | Scroll suave | `npm install lenis` |
+| [GSAP](https://gsap.com/) | Animaciones, scroll y transiciones | `npm install gsap` |
+| [GSAP React](https://www.npmjs.com/package/@gsap/react) | Hooks de animación en React/Next.js | `npm install @gsap/react` |
+| [React Bits](https://reactbits.dev/) | Componentes animados editables | Añadir los componentes elegidos |
+
+**Para React o Next.js** puedes instalar los tres paquetes de animación juntos, desde la carpeta raíz de tu proyecto:
+
+```powershell
+npm install lenis gsap @gsap/react
+```
+
+O utilizar el script incluido en el kit para Lenis y GSAP. Desde **la carpeta del proyecto**, por ejemplo:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\ruta\a\claude-config\scripts\frontend-deps.ps1" -GSAP -Lenis -ReactGSAP
+```
+
+La instalación **no activa automáticamente** el scroll o las animaciones: hay que integrarlas en el código. En React Bits se incorpora el componente concreto, no un paquete completo obligatorio.
+
+**[📘 Ver tutoriales paso a paso y ejemplos Next.js (Lenis, GSAP y React Bits)](docs/LIBRERIAS-FRONTEND.md)**
+
+## 💻 Llevarlo a otro PC
+
+En el nuevo ordenador, después de instalar Git, Node.js y Claude Code:
+
+```powershell
 git clone https://github.com/Manuelklk03/claude-config.git
 cd claude-config
 .\INSTALAR.cmd
-El instalador instala globalmente los plugins y skills en ese PC. Abre después cualquier repositorio en VS Code y usa la extensión oficial Claude Code. No hay que copiar este kit dentro de cada proyecto.
+```
 
-Actualizar en cualquier PC: desde la carpeta clonada ejecuta ACTUALIZAR.cmd. El script hace git pull --ff-only, reinstala los elementos que faltan y actualiza los plugins instalados cuando Claude Code permite hacerlo.
-🧰 Herramientas incluidas
-Diseño/frontend (sin instalar varias copias de las mismas skills)
-Usamos el Claude Code Frontend Skills como conjunto principal:
-- frontend-stack: router que selecciona la skill adecuada.
-- frontend-design: dirección visual de Anthropic.
-- impeccable: auditoría y mejora UI/UX.
-- ui-ux-pro-max: estilos, tipografía, sistemas de diseño.
-- taste: dirección artística y webs menos genéricas.
-- emil-design-eng: movimiento e interacciones.
-- imagegen-skills: contiene Image to Code de Leonxlnx.
-- web-design-guidelines: revisión de UI, responsive y accesibilidad.
-Desarrollo y metodología
-Herramienta	Función	Instalación prevista
-Superpowers	Planificación, pruebas, depuración	Plugin global
-Claude Code Setup oficial	Configuración de Claude Code	Plugin global
-PonyTail	Soluciones simples y revisión	Plugin global, valores locales sin webhook por defecto
-Karpathy Skills	Simplicidad y cambios quirúrgicos	Plugin global
-Grill Me	Preguntas sobre decisiones técnicas	Plugin global
-Claude-Mem	Memoria persistente entre sesiones	Plugin global; su runtime/proveedor necesita comprobación
-Task Observer	Aprender de observaciones sobre skills	Skill global
-Graphify	Documentación/visualización según el paquete	Skill global; CLI separada
-Find Skills	Descubrir skills disponibles	npx skills find
-Playwright CLI	Pruebas/navegación	npm global + skill
-Agent Browser	Automatización del navegador	npm global + skill
+Cuando quieras incorporar cambios del repositorio o actualizar herramientas:
 
+```powershell
+.\ACTUALIZAR.cmd
+```
 
-SEO, diseño y utilidades
-Recurso	Instalación
-SEO Audit y AI SEO	Skills globales
-Anthropic Canvas Design + Skill Creator	Skills globales
-Awesome DESIGN.md	Colección de referencias en ~/.claude/references/
-Anti AI Slop	Plugin instalado pero apagado por defecto
-Caveman	Plugin instalado pero apagado por defecto
-Headroom	Plugin instalado pero apagado por defecto; requiere runtime/proxy para funciones avanzadas
-OmniRoute	CLI global, sin conectar proveedores automáticamente
-GSAP, Lenis, React Bits	Por proyecto, no en todos los repositorios
+> [!WARNING]
+> Git sincroniza **la receta de instalación**, no las sesiones de usuario, bases de memoria ni credenciales de proveedores externos. Cada ordenador necesita sus propias autenticaciones.
 
+### ¿Y Claude Web?
 
-Si necesitas GSAP o Lenis, dentro de la carpeta del proyecto que contiene package.json:
-npm install gsap lenis
-React Bits permite incorporar solo los componentes que elijas: https://reactbits.dev/.
-⚙️ Valores predeterminados y seguridad
-Decisión	Valor	Motivo
-Plugin scope	user	Disponible en todos los proyectos de ese PC
-Perfil	Complete	Descarga toda la selección verificada
-Headroom, Caveman, Anti AI Slop	Deshabilitados tras instalar	Evitar conflictos y procesos innecesarios
-PonyTail	ledger sí; sin webhook; no enviar nombres	Mantener datos localmente por defecto
-Timeout de clones Claude	900.000 ms	Dar tiempo a los repositorios grandes
-settings.json existente	No se reemplaza	Preservar permisos, MCP y ajustes propios
-CLAUDE.md existente	No se reemplaza	No perder tus reglas
-Credenciales, tokens y cookies	Nunca en Git	Evitar filtraciones
+Los plugins compatibles que añadas desde la **cuenta de Claude Web** pueden acompañarte en Claude Code al usar la misma cuenta. Pero las instalaciones locales de Windows, los hooks específicos y la memoria local **no se publican automáticamente en Claude Web**.
 
+**[☁️ Guía de Claude Web](docs/CLAUDE-WEB.md)**
 
-El instalador utiliza los métodos documentados de Claude Code: claude plugin marketplace add, claude plugin install --scope user, claude plugin disable y npx skills add ... -g. Puede fallar una descarga por red o por una dependencia propia del plugin: ningún JSON garantiza por sí solo que todos los plugins funcionen automáticamente.
+## 📁 Estructura
 
-Para Claude-Mem, la memoria persistente no se sincroniza automáticamente entre equipos. Si npx claude-mem doctor indica que falta configuración, ejecuta npx claude-mem install y elige un proveedor; algunas opciones pueden requerir cuenta o coste. No se toma esa decisión por ti.
-
-Para OmniRoute, no ejecutamos omniroute setup-claude ni redirigimos el modelo sin que elijas proveedor. Para Headroom, no instalamos ni activamos automáticamente un proxy que altere las solicitudes.
-📁 Estructura del repositorio
+```text
 claude-config/
-├── INSTALAR.cmd                  # Instalación principal (doble clic)
-├── REPARAR.cmd                   # Reintentar lo fallido y limpiar clones temporales
-├── ACTUALIZAR.cmd                # Git pull + reinstalar lo faltante + actualizar plugins
-├── PUBLICAR-EN-GITHUB.cmd        # Actualizar tu repositorio privado
-├── CLAUDE.md                     # Reglas globales de referencia
+├── INSTALAR.cmd            # Preparar un PC
+├── REPARAR.cmd             # Reintentar componentes fallidos
+├── ACTUALIZAR.cmd          # Actualizar el kit y los plugins
+├── CLAUDE.md               # Reglas globales base
 ├── config/
-│   ├── manifest.json             # Lista real de plugins, skills y programas
-│   └── defaults.json             # Valores elegidos por defecto
+│   ├── manifest.json       # Inventario de herramientas
+│   └── defaults.json       # Predeterminados seguros
 ├── scripts/
 │   ├── install.ps1
 │   ├── repair.ps1
 │   ├── check.ps1
 │   ├── update.ps1
-│   ├── publish.ps1
 │   └── frontend-deps.ps1
-├── docs/
-│   ├── GUIA-HERRAMIENTAS.md
-│   ├── CLAUDE-WEB.md
-│   └── SOLUCIONAR-PROBLEMAS.md
-└── .gitignore
-🔎 Comprobar errores
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
-claude plugin list
-npx skills ls -g
-En .local/install.log y .local/report.json tienes los resultados completos; .local/ está ignorada por Git. Si algo falla, consulta [Solucionar problemas](docs/SOLUCIONAR-PROBLEMAS.md).
-📚 Documentación adicional
-- [Qué herramienta usar para cada tarea](docs/GUIA-HERRAMIENTAS.md)
-- [Claude Web y sincronización](docs/CLAUDE-WEB.md)
-- [Errores y reparación](docs/SOLUCIONAR-PROBLEMAS.md)
-- Documentación oficial de plugins Claude Code
-- Documentación oficial de configuración
-Este repositorio no es un marketplace de plugins propio ni un paquete que sustituya Claude Code. Es un instalador y un inventario reproducible de herramientas de terceros. Revisa los orígenes antes de ejecutar hooks o herramientas con acceso al sistema de archivos.
+└── docs/
+    ├── PRIMEROS-PASOS.md
+    ├── LIBRERIAS-FRONTEND.md
+    ├── GUIA-HERRAMIENTAS.md
+    ├── CLAUDE-WEB.md
+    └── SOLUCIONAR-PROBLEMAS.md
+```
+
+<details>
+<summary><strong>🔐 ¿Por qué no hay un script para publicar en GitHub en el repositorio?</strong></summary>
+
+El script de publicación se guarda **solo en el equipo del propietario** y se excluye mediante `.gitignore`, como medida de organización. **La seguridad real la controla GitHub:** nadie puede hacer `push` sin permisos de escritura y autenticación, aunque conozca los comandos.
+
+Para publicar documentación modificada, desde tu clon habitual puedes utilizar Git directamente:
+
+```powershell
+git add README.md docs/ .gitignore
+git commit -m "docs: improve setup and frontend guides"
+git push
+```
+
+</details>
+
+<details>
+<summary><strong>🧯 ¿Y si alguna instalación falla?</strong></summary>
+
+1. Cierra Claude Code y VS Code si hay procesos Git bloqueados.
+2. Ejecuta `REPARAR.cmd`.
+3. Revisa `.local/report.json` y `.local/install.log`.
+4. Consulta [Solucionar problemas](docs/SOLUCIONAR-PROBLEMAS.md).
+
+No borres la carpeta `~/.claude` ni las bases locales de memoria para intentar reparar un marketplace.
+
+</details>
+
+## 📚 Documentación
+
+| Documento | Contenido |
+|---|---|
+| **[Primeros pasos](docs/PRIMEROS-PASOS.md)** | Qué configurar después de instalar y cómo comprobar que funciona |
+| **[Librerías frontend](docs/LIBRERIAS-FRONTEND.md)** | Lenis, GSAP, React Bits y ejemplos para Next.js |
+| [Guía de herramientas](docs/GUIA-HERRAMIENTAS.md) | Cuándo usar cada plugin o skill |
+| [Claude Web](docs/CLAUDE-WEB.md) | Qué funciona en la web y qué se sincroniza |
+| [Solucionar problemas](docs/SOLUCIONAR-PROBLEMAS.md) | Diagnóstico y reparación |
+
+---
+
+<div align="center">
+
+**Un entorno de Claude reproducible, sin duplicar configuraciones ni publicar datos privados.**
+
+<sub>Proyecto personal de configuración · Herramientas de sus respectivos autores · Revisa cualquier plugin antes de permitirle ejecutar hooks o acceder a archivos.</sub>
+
+</div>
