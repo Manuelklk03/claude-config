@@ -14,3 +14,13 @@ node_modules/
 # Herramientas privadas de publicación (no necesarias para instalar)
 PUBLICAR-EN-GITHUB.cmd
 scripts/publish.ps1
+
+# Generado automaticamente por Claude-Mem (integracion Windsurf)
+.windsurf/rules/claude-mem-context.md
+
+# Datos locales de Claude / Claude-Mem y copias personales
+.claude/settings.local.json
+.claude-mem/
+*.backup.json
+*.pem
+*.key
