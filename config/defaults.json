@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "installationProfile": "complete",
+  "globalScope": "user",
+  "memoryProvider": "requires-user-choice",
+  "proxyRouting": "not-auto-enabled",
+  "ponytail": {
+    "ledger": true,
+    "webhookUrl": "",
+    "sendNames": false,
+    "webhookToken": "never-save-to-git"
+  },
+  "optionalPluginsInstalledButDisabled": [
+    "antislop@anti-ai-slop",
+    "caveman@caveman",
+    "headroom@headroom-marketplace"
+  ]
+}

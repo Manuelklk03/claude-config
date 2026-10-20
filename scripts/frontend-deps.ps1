@@ -1,8 +1,12 @@
+# Instalacion voluntaria, solo para un proyecto frontend (NO global).
 param([switch]$GSAP,[switch]$Lenis)
-if (-not (Test-Path 'package.json')) {throw 'Ejecuta esto en la raiz de un proyecto Node que tenga package.json.'}
-$pkgs=@()
-if($GSAP){$pkgs+='gsap'}
-if($Lenis){$pkgs+='lenis'}
-if($pkgs.Count -eq 0){Write-Host 'Ejemplo: .\scripts\frontend-deps.ps1 -GSAP -Lenis'; exit}
-npm.cmd install @pkgs
-Write-Host 'React Bits: instala/copia solo los componentes que elijas desde https://reactbits.dev/'
+if(-not (Test-Path -LiteralPath (Join-Path (Get-Location).Path 'package.json'))) {
+  throw 'Abre la raiz del proyecto (donde esta package.json) antes de ejecutar este script.'
+}
+$packages=@()
+if($GSAP){$packages+='gsap'}
+if($Lenis){$packages+='lenis'}
+if($packages.Count -eq 0){Write-Host 'Ejemplo: npm install gsap lenis'; exit 0}
+& npm.cmd install @packages
+if($LASTEXITCODE -ne 0){throw 'npm install no ha finalizado correctamente.'}
+Write-Host 'React Bits: anade solo los componentes que elijas en https://reactbits.dev/'

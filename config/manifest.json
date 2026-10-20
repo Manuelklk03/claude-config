@@ -3,6 +3,10 @@
   "note": "Fuentes comprobadas 2026-10-20. Instalar plugins de terceros permite ejecutar hooks/codigo local: revisalos.",
   "marketplaces": [
     {
+      "id": "claude-plugins-official",
+      "source": "anthropics/claude-plugins-official"
+    },
+    {
       "id": "frontend-stack",
       "source": "JaimeJunr/claude-code-frontend-skills"
     },

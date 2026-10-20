@@ -1,116 +1,207 @@
 #requires -Version 5.1
+[CmdletBinding()]
 param(
-  [switch]$IncludeOptional,
-  [switch]$IncludeOmniRoute,
-  [switch]$IncludeReferences,
-  [switch]$SkipNpm,
-  [switch]$SkipSkills,
-  [switch]$SkipPlugins,
-  [switch]$SkipTaskObserver,
-  [switch]$SkipVSCode
+    [ValidateSet('Complete','Core')][string]$Profile = 'Complete',
+    [switch]$Repair,
+    [switch]$CleanStaging,
+    [switch]$SkipNpm,
+    [switch]$SkipSkills,
+    [switch]$SkipVSCode,
+    [switch]$SkipClaudeMem,
+    [switch]$SkipReferences
 )
 $ErrorActionPreference = 'Stop'
-$repo = Split-Path -Parent $PSScriptRoot
-$manifest = Get-Content (Join-Path $repo 'config\manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-$claudeDir = Join-Path $HOME '.claude'
-$logDir = Join-Path $repo '.local'
-New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-$log = Join-Path $logDir 'install.log'
-$failed = New-Object System.Collections.Generic.List[string]
-$ok = New-Object System.Collections.Generic.List[string]
-function Log([string]$message) { Write-Host $message; Add-Content -Path $log -Value $message -Encoding UTF8 }
-function Run([string]$label,[string]$exe,[string[]]$arguments) {
-  # npm instala lanzadores .ps1 y .cmd; utilizar .cmd evita errores por ExecutionPolicy.
-  if ($exe -in @('npm','npx','agent-browser','playwright-cli')) { $exe += '.cmd' }
-  if (-not (Get-Command $exe -ErrorAction SilentlyContinue)) { Log "[PENDIENTE] $label - No se encuentra $exe"; $failed.Add($label); return }
-  Log "[EJECUTANDO] $label"
-  $previousPreference = $ErrorActionPreference
-  try {
-    $ErrorActionPreference = 'Continue'
-    $output = & $exe @arguments 2>&1 | Out-String
-    $code = $LASTEXITCODE
-    if ($output.Trim()) { Log $output.Trim() }
-    if ($code -eq 0) { $ok.Add($label); Log "[OK] $label" }
-    else { Log "[REVISAR] $label (codigo $code; si dice 'already exists', puede estar instalado)"; $failed.Add($label) }
-  } catch { Log "[ERROR] $label - $($_.Exception.Message)"; $failed.Add($label) }
-  finally { $ErrorActionPreference = $previousPreference }
+$env:CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS = '900000'
+$env:CLAUDE_CODE_PLUGIN_PREFER_HTTPS = '1'
+$root = Split-Path -Parent $PSScriptRoot
+$manifest = Get-Content -LiteralPath (Join-Path $root 'config\manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$defaults = Get-Content -LiteralPath (Join-Path $root 'config\defaults.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$claudeHome = Join-Path $HOME '.claude'
+$logs = Join-Path $root '.local'
+New-Item -ItemType Directory -Path $logs -Force | Out-Null
+New-Item -ItemType Directory -Path $claudeHome -Force | Out-Null
+$log = Join-Path $logs 'install.log'
+$results = New-Object System.Collections.ArrayList
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+
+function Say([string]$s) {
+    Write-Host $s
+    Add-Content -LiteralPath $log -Value $s -Encoding UTF8
 }
-Log '=== INSTALADOR GLOBAL CLAUDE - WINDOWS ==='
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Instala Git antes de continuar.' }
-if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { throw 'Instala y autentica Claude Code CLI (comando claude) antes de continuar.' }
-if (-not $SkipSkills -or -not $SkipNpm) {
- if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Falta Node.js 22.20+.' }
- $ver = (& node --version).Trim()
- if ($ver -match '^v(\d+)\.(\d+)\.') {
-    $major=[int]$Matches[1]; $minor=[int]$Matches[2]
-    if ($major -lt 22 -or ($major -eq 22 -and $minor -lt 20)) {throw "Node $ver es antiguo; actualiza a >=22.20."}
- }
+function Record([string]$label,[string]$state,[string]$detail) {
+    [void]$results.Add([pscustomobject]@{label=$label;status=$state;detail=$detail})
+    Say "[$state] $label - $detail"
 }
-if (Test-Path (Join-Path $claudeDir 'settings.json')) {
- $backup = Join-Path $logDir ('settings.backup.'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.json')
- Copy-Item (Join-Path $claudeDir 'settings.json') $backup
- Log "[COPIA] Configuracion previa en $backup"
+function Have([string]$command) {
+    return ($null -ne (Get-Command $command -ErrorAction SilentlyContinue))
 }
-# Reglas personales compartibles, sin sobrescribir las ya existentes.
-New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
-$globalRules = Join-Path $claudeDir 'CLAUDE.md'
-if (-not (Test-Path $globalRules)) {
- Copy-Item (Join-Path $repo 'CLAUDE.md') $globalRules
- Log '[OK] Reglas globales CLAUDE.md copiadas.'
-} else { Log '[INFO] CLAUDE.md global existente: preservado; fusiona reglas del kit manualmente si deseas.' }
-if (-not $SkipVSCode -and (Get-Command code -ErrorAction SilentlyContinue)) {
- Run 'Extension oficial VS Code' 'code' @('--install-extension','anthropic.claude-code','--force')
-} else { Log '[INFO] VS Code: si no existe code en PATH, instala la extension Anthropic.claude-code a mano.' }
-if (-not $SkipPlugins) {
- Log '[INFO] Los plugins ejecutan codigo local (hooks y MCP). Instala solo repositorios que hayas revisado.'
- foreach($m in $manifest.marketplaces) {
-    if ($m.id -in @('anti-ai-slop','caveman','headroom-marketplace') -and -not $IncludeOptional) { continue }
-    Run "Marketplace $($m.id)" 'claude' @('plugin','marketplace','add',$m.source)
- }
- foreach($p in $manifest.plugins) {
-    if ($p.stage -eq 'opcional' -and -not $IncludeOptional) { continue }
-    Run "Plugin $($p.id)" 'claude' @('plugin','install',$p.id,'--scope','user')
- }
+function Exec([string]$label,[string]$exe,[string[]]$a) {
+    if (-not (Have $exe)) {Record $label 'PENDING' "No se encuentra: $exe"; return $false}
+    Say "[RUN] $label"
+    $old=$ErrorActionPreference
+    try {
+        # Las herramientas nativas envian avisos normales a stderr: no interpretarlos automaticamente como excepciones.
+        $ErrorActionPreference='Continue'
+        $textOut = (& $exe @a 2>&1 | Out-String)
+        $exitCode = $LASTEXITCODE
+        if ($textOut.Trim()) { Add-Content -LiteralPath $log -Value $textOut -Encoding UTF8 }
+        if ($exitCode -eq 0) {Record $label 'OK' 'Completado'; return $true}
+        Record $label 'FAILED' "Codigo $exitCode. Ver .local/install.log"; return $false
+    } catch {Record $label 'FAILED' $_.Exception.Message; return $false}
+    finally {$ErrorActionPreference=$old}
 }
-if (-not $SkipSkills) {
- foreach($s in $manifest.skills) {
-    Run "Skill $($s.skill)" 'npx' @('-y','skills@latest','add',$s.source,'--skill',$s.skill,'-g','-a','claude-code','-y')
- }
- # Verificacion, no instala una segunda copia del Agent Browser: se instala via npm por separado
+function InstalledPlugin([string]$id) {
+    $path=Join-Path $claudeHome 'plugins\installed_plugins.json'
+    if (-not (Test-Path -LiteralPath $path)) {return $false}
+    try {
+        $j=Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        if($j.plugins) {return (@($j.plugins.PSObject.Properties.Name) -contains $id)}
+    } catch {}
+    return $false
 }
-if (-not $SkipNpm) {
- foreach ($p in $manifest.npmGlobal) { Run "NPM $($p.pkg)" 'npm' @('install','-g',$p.pkg) }
- if (Get-Command playwright-cli.cmd -ErrorAction SilentlyContinue) {
-    Run 'Skill Playwright CLI global' 'playwright-cli' @('install','--skills','-g')
- }
- if (Get-Command agent-browser.cmd -ErrorAction SilentlyContinue) {
-    Run 'Instalar navegador Agent Browser' 'agent-browser' @('install')
-    if (-not $SkipSkills) {Run 'Skill Agent Browser global' 'npx' @('-y','skills@latest','add','vercel-labs/agent-browser','--skill','agent-browser','-g','-a','claude-code','-y')}
- }
- if($IncludeOmniRoute) { Run 'OmniRoute CLI (SIN conectar proveedores)' 'npm' @('install','-g','omniroute') }
+function InstalledSkill([string]$name) {
+    return (Test-Path -LiteralPath (Join-Path $claudeHome "skills\$name\SKILL.md"))
 }
-if (-not $SkipTaskObserver) {
- $target = Join-Path $claudeDir 'skills\task-observer'
- $temp = Join-Path $logDir 'task-observer-src'
- if (Test-Path $temp) {Remove-Item $temp -Force -Recurse}
- Run 'Descargar Task Observer' 'git' @('clone','--depth','1','https://github.com/SquidyInk/task-observer.git',$temp)
- if ((Test-Path (Join-Path $temp 'SKILL.md')) -and (Test-Path (Join-Path $temp 'references'))) {
-   New-Item -ItemType Directory -Force -Path $target | Out-Null
-   Copy-Item (Join-Path $temp 'SKILL.md') $target -Force
-   Copy-Item (Join-Path $temp 'references') $target -Recurse -Force
-   Log '[OK] Task Observer (SKILL.md + references)'
- } else { Log '[REVISAR] Task Observer - SKILL.md o references ausentes'; $failed.Add('Task Observer') }
+function TryMarketplace([object]$item) {
+    $path=Join-Path $claudeHome 'plugins\known_marketplaces.json'
+    # Dejar que Claude valide el catalogo; 'already on disk' finaliza con exito.
+    return (Exec "Marketplace $($item.id)" 'claude' @('plugin','marketplace','add', $item.source))
 }
-if ($IncludeReferences) {
- $target=Join-Path $claudeDir 'references\awesome-design-md'
- if (-not (Test-Path (Join-Path $target '.git'))) {
-   New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
-   Run 'Clonar Awesome DESIGN.md (REFERENCIAS)' 'git' @('clone','--depth','1','https://github.com/VoltAgent/awesome-design-md.git',$target)
- } else {Run 'Actualizar Awesome DESIGN.md' 'git' @('-C',$target,'pull','--ff-only')}
+function Clean-TemporaryClone {
+    if (-not $CleanStaging) {return}
+    $dir=Join-Path $claudeHome 'plugins\marketplaces'
+    $allowed = @('thedotmack-claude-mem..clone','headroomlabs-ai-headroom..clone')
+    if (Get-Process -Name git -ErrorAction SilentlyContinue) {
+        Say '[WARN] Git esta ejecutandose: no borro carpetas temporales.'
+        return
+    }
+    foreach($n in $allowed) {
+        $p=Join-Path $dir $n
+        if (Test-Path -LiteralPath $p) {
+            try {Remove-Item -LiteralPath $p -Recurse -Force -ErrorAction Stop; Say "[OK] Temporal limpiado: $n"}
+            catch {Say "[WARN] No se pudo limpiar $n : $($_.Exception.Message)"}
+        }
+    }
 }
-Log ''
-Log "=== FINAL: $($ok.Count) pasos correctos; $($failed.Count) a revisar ==="
-foreach($f in $failed) {Log "  - $f"}
-Log 'Reinicia VS Code y Claude Code. Verifica: claude plugin list ; npx skills ls -g'
-Log 'No ejecutes OmniRoute setup-claude ni sobreescribas ~/.claude/settings.json sin revisar.'
-Log "Log: $log"
+try {
+    Say '=== CLAUDE CONFIG PORTABLE v2 - WINDOWS ==='
+    if (-not (Have 'git.exe')) {throw 'Necesitas Git. Usa winget install --id Git.Git -e'}
+    if (-not (Have 'node.exe')) {throw 'Necesitas Node.js 22.20+. Usa winget install --id OpenJS.NodeJS.LTS -e'}
+    if (-not (Have 'claude.exe')) {
+        $env:PATH += ';'+(Join-Path $HOME '.local\bin')
+        if (-not (Have 'claude.exe')) {throw 'Instala primero Claude Code CLI: irm https://claude.ai/install.ps1 | iex'}
+    }
+    $vers=& node --version
+    if ($vers -match '^v(\d+)\.(\d+)') {
+       $maj=[int]$Matches[1]; $min=[int]$Matches[2]
+       if ($maj -lt 22 -or ($maj -eq 22 -and $min -lt 20)) {throw "Node $vers es antiguo (minimo 22.20)."}
+    }
+    Clean-TemporaryClone
+    $settings=Join-Path $claudeHome 'settings.json'
+    if (Test-Path -LiteralPath $settings) {
+        $backup=Join-Path $logs "settings.$stamp.backup.json"
+        Copy-Item -LiteralPath $settings -Destination $backup
+        Say "[BACKUP] $backup"
+        try {$null=Get-Content $settings -Raw -Encoding UTF8 | ConvertFrom-Json}
+        catch {throw 'settings.json existente no es JSON valido. Restaura/corrige manualmente antes de instalar.'}
+    }
+    # Las reglas se crean solo si faltan. Nunca sobreescribimos las del usuario.
+    $rules=Join-Path $claudeHome 'CLAUDE.md'
+    if(-not (Test-Path -LiteralPath $rules)) {
+        Copy-Item -LiteralPath (Join-Path $root 'CLAUDE.md') -Destination $rules
+        Record 'Reglas globales' 'OK' 'CLAUDE.md creado'
+    } else {Record 'Reglas globales' 'SKIP' 'CLAUDE.md existente respetado'}
+
+    if (-not $SkipVSCode) {
+        if(Have 'code.cmd') { [void](Exec 'Extension VS Code' 'code.cmd' @('--install-extension','anthropic.claude-code')) }
+        else {Record 'Extension VS Code' 'PENDING' 'code.cmd no disponible: instalar la extension desde VS Code'}
+    }
+    # El marketplace oficial puede estar registrado pero desactualizado. Actualizarlo antes de instalar plugins.
+    [void](Exec 'Registrar marketplace oficial' 'claude' @('plugin','marketplace','add','anthropics/claude-plugins-official'))
+    [void](Exec 'Actualizar catalogo oficial' 'claude' @('plugin','marketplace','update','claude-plugins-official'))
+    foreach($m in $manifest.marketplaces) {
+        if($m.id -eq 'claude-plugins-official') {continue}
+        if($Profile -eq 'Core' -and $m.id -in @('anti-ai-slop','caveman','headroom-marketplace')) {continue}
+        if($SkipClaudeMem -and $m.id -eq 'thedotmack') {continue}
+        [void](TryMarketplace $m)
+    }
+    foreach($p in $manifest.plugins) {
+        if($Profile -eq 'Core' -and $p.stage -eq 'opcional') {continue}
+        if($SkipClaudeMem -and $p.id -eq 'claude-mem@thedotmack') {continue}
+        if(InstalledPlugin $p.id) {Record "Plugin $($p.id)" 'SKIP' 'Instalado en este equipo'; continue}
+        $args=@('plugin','install',$p.id,'--scope','user')
+        if ($p.id -eq 'ponytail@ponytail') {
+            $args+=@('--config','ledger=true','--config','webhookUrl=','--config','sendNames=false')
+            if (-not (Exec "Plugin $($p.id) con defaults" 'claude' $args)) {
+                [void](Exec "Plugin $($p.id) sin defaults" 'claude' @('plugin','install',$p.id,'--scope','user'))
+                Record 'Configurar PonyTail' 'PENDING' 'En Claude: /plugin configure ponytail@ponytail (sin webhook)'
+            }
+        } else { [void](Exec "Plugin $($p.id)" 'claude' $args) }
+    }
+    # Las utilidades que fuerzan comportamiento o usan un proxy se instalan pero se dejan deshabilitadas.
+    if ($Profile -eq 'Complete') {
+        foreach($p in $defaults.optionalPluginsInstalledButDisabled) {
+            [void](Exec "Deshabilitar $p por defecto" 'claude' @('plugin','disable',$p))
+        }
+    }
+    if(-not $SkipSkills) {
+        if(-not (Have 'npx.cmd')) {Record 'Skills' 'FAILED' 'Falta npx.cmd'}
+        else {
+            foreach($s in $manifest.skills) {
+                if(InstalledSkill $s.skill) {Record "Skill $($s.skill)" 'SKIP' 'Ya existe'; continue}
+                [void](Exec "Skill $($s.skill)" 'npx.cmd' @('-y','skills@latest','add',$s.source,'--skill',$s.skill,'-g','-a','claude-code','-y'))
+            }
+        }
+    }
+    if(-not $SkipNpm) {
+        if(Have 'npm.cmd') {
+            foreach($n in $manifest.npmGlobal) {
+                if(Have ($n.command+'.cmd')) {Record "CLI $($n.command)" 'SKIP' 'Ya esta en PATH'}
+                else {[void](Exec "CLI $($n.command)" 'npm.cmd' @('install','-g',$n.pkg))}
+            }
+            if((Have 'playwright-cli.cmd') -and -not (InstalledSkill 'playwright-cli')) {
+                [void](Exec 'Skill Playwright CLI' 'playwright-cli.cmd' @('install','--skills','-g'))
+            }
+            if((Have 'agent-browser.cmd') -and -not (InstalledSkill 'agent-browser')) {
+                [void](Exec 'Navegador Agent Browser' 'agent-browser.cmd' @('install'))
+                if(-not $SkipSkills) {[void](Exec 'Skill Agent Browser' 'npx.cmd' @('-y','skills@latest','add','vercel-labs/agent-browser','--skill','agent-browser','-g','-a','claude-code','-y'))}
+            }
+            if($Profile -eq 'Complete') {
+                if(Have 'omniroute.cmd') {Record 'OmniRoute CLI' 'SKIP' 'Ya esta instalada'}
+                else { [void](Exec 'OmniRoute CLI (no configurar proxy)' 'npm.cmd' @('install','-g','omniroute')) }
+            }
+        }
+    }
+    # Task Observer requiere SKILL.md + carpeta references.
+    if(-not (InstalledSkill 'task-observer')) {
+        $src=Join-Path $logs 'task-observer-src'
+        if(-not (Test-Path -LiteralPath (Join-Path $src 'SKILL.md'))) {
+            [void](Exec 'Descargar Task Observer' 'git.exe' @('clone','--depth','1','https://github.com/SquidyInk/task-observer.git',$src))
+        }
+        if((Test-Path -LiteralPath (Join-Path $src 'SKILL.md')) -and (Test-Path -LiteralPath (Join-Path $src 'references'))) {
+            $target=Join-Path $claudeHome 'skills\task-observer'
+            New-Item -ItemType Directory -Force -Path $target | Out-Null
+            Copy-Item -LiteralPath (Join-Path $src 'SKILL.md') -Destination $target -Force
+            Copy-Item -LiteralPath (Join-Path $src 'references') -Destination $target -Recurse -Force
+            Record 'Task Observer' 'OK' 'SKILL.md y referencias copiadas'
+        } else {Record 'Task Observer' 'FAILED' 'No se han descargado SKILL.md y references'}
+    } else {Record 'Task Observer' 'SKIP' 'Ya instalado'}
+    if($Profile -eq 'Complete' -and -not $SkipReferences) {
+        $target=Join-Path $claudeHome 'references\awesome-design-md'
+        if(-not(Test-Path -LiteralPath (Join-Path $target '.git'))) {
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+            [void](Exec 'Biblioteca Awesome DESIGN.md' 'git.exe' @('clone','--depth','1','https://github.com/VoltAgent/awesome-design-md.git',$target))
+        } else {Record 'Awesome DESIGN.md' 'SKIP' 'Referencias ya disponibles'}
+    }
+} finally {
+    $report=Join-Path $logs 'report.json'
+    @($results) | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $report -Encoding UTF8
+    $ok=@($results | Where-Object {$_.status -eq 'OK'}).Count
+    $failed=@($results | Where-Object {$_.status -eq 'FAILED'}).Count
+    $pending=@($results | Where-Object {$_.status -eq 'PENDING'}).Count
+    $skip=@($results | Where-Object {$_.status -eq 'SKIP'}).Count
+    Say "=== RESULTADO: $ok correctos, $skip ya disponibles, $failed errores, $pending pendientes ==="
+    Say "Informe: $report | Log: $log"
+    Say 'Reinicia Claude Code. Para memoria: npx claude-mem doctor (puede necesitar npx claude-mem install).'
+    Say 'La autenticacion de modelos, proxies y Claude Web no se comparte por Git.'
+}

@@ -1,13 +1,21 @@
-# Claude Web: qué se sincroniza realmente (octubre 2026)
+# Claude Web, Claude Code y VS Code
 
-La cuenta de Claude admite plugins desde **Personalizar > Plugins** y skills desde **Personalizar > Habilidades/Skills** (nombres pueden variar con el idioma). Los plugins y skills que instales directamente en Claude Web pueden sincronizarse a Claude Code con la **misma cuenta** y Claude Code **v2.1.273 o posterior**. 
+Son entornos relacionados, pero no idénticos.
 
-- Sincronizacion cuenta Claude → Claude Code, no al revés. No implica que el instalador local cree automaticamente plugins en la web.
-- No funciona con autenticacion por clave API ni terceros cloud Bedrock.
-- Skills/comandos de plugins pueden usarse en chat; hooks, servidores locales y subagentes solo se ejecutan en entornos compatibles como Claude Code/Cowork.
-- Para el plugin oficial **Claude Code Setup**, en claude.ai entra en Personalizar > Plugins > Descubrir y busca "Claude Code Setup" (Anthropic verificado).
-- Para **Task Observer**, comprime `SKILL.md` junto a `references/` en un ZIP y subelo a Skills en la web, si tu cuenta permite importar skills.
-- Los plugins comunitarios de GitHub pueden requerir agregarlos como marketplace desde Personalizar > Plugins > Agregar mercado > repositorio.
-- No subas tokens, logs privados ni la carpeta de memoria a GitHub.
+| Entorno | Qué recupera este kit |
+|---|---|
+| Claude Code desde PowerShell | Plugins, skills, reglas globales y programas CLI |
+| Claude Code en VS Code (mismo PC) | La misma configuración de usuario y los mismos plugins |
+| Claude Web (claude.ai chat) | Las skills/plugins compatibles instalados en la cuenta **desde Web**, no todo el kit local |
+| Claude Code cloud remoto | No hereda automáticamente los plugins instalados en tu Windows |
 
-Fuentes: https://support.claude.com/es/articles/13837440-usar-plugins-en-claude y https://support.claude.com/es/articles/12512180-usar-habilidades-en-claude
+## Configurar Claude Web
+
+1. Abre Claude Web e inicia sesión con la misma cuenta que utilizas en Claude Code.
+2. En la sección de personalización o plugins, revisa qué skills/plugins ofrece tu cuenta.
+3. Importa o instala solo los que Claude Web permita (por ejemplo, skills compatibles como Task Observer, si el producto permite importarlas).
+4. Ciertos plugins de claude.ai pueden sincronizarse **de la cuenta hacia Claude Code**, cuando la versión y la autenticación lo admiten. Los plugins locales instalados con la CLI **no se suben** a Claude Web automáticamente.
+
+Nunca copies desde GitHub tokens, cookies de sesión, credenciales de OmniRoute ni la base de memoria local.
+
+Documentación: https://code.claude.com/docs/en/discover-plugins

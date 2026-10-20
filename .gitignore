@@ -1,9 +1,12 @@
+.local/
 *.log
 .env
 .env.*
-!*.example
+!.env.example
 **/credentials*
 **/secrets*
-backups/
-.local/
 node_modules/
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
