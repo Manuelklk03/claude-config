@@ -1,3 +1,9 @@
+
+# Scripts privados de publicación
+PUBLICAR-EN-GITHUB.cmd
+scripts/publish.ps1
+
+# Configuración privada y archivos locales
 .local/
 *.log
 .env
